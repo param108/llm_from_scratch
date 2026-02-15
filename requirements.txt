@@ -1,0 +1,5 @@
+# Production dependencies
+# (none currently - pure Python implementation)
+
+# Development dependencies
+pytest>=9.0.0
