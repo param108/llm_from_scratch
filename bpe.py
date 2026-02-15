@@ -217,7 +217,24 @@ class BPE:
                 pos += 1
 
         return result
-        
+
+    def decode(self, token_ids):
+        """Decode a list of token IDs back to text.
+
+        Args:
+            token_ids: List of token IDs to decode
+
+        Returns:
+            Decoded text string
+        """
+        result = []
+        for token_id in token_ids:
+            if token_id in self.reverse_lookup:
+                result.append(self.reverse_lookup[token_id])
+            else:
+                raise ValueError(f"Token ID {token_id} not found in vocabulary.")
+        return ''.join(result)
+
     def save(self):
         with open(self.filename, 'w') as f:
             for token, token_obj in self.lookup.items():

@@ -394,6 +394,101 @@ class TestBPEEncode:
             assert "not found in vocabulary" in str(e)
 
 
+class TestBPEDecode:
+    """Test the decode function that converts token IDs back to text."""
+
+    def test_decode_basic(self, temp_vocab_file):
+        """Test basic decoding of token IDs."""
+        bpe = BPE(temp_vocab_file, min_pair_frequency=1)
+        text = "hello world"
+        bpe.set_vocab_size(50)
+
+        # Create vocabulary and encode
+        bpe.create_vocab(text)
+        encoded = bpe.encode(text)
+
+        # Decode should return original text
+        decoded = bpe.decode(encoded)
+        assert decoded == text
+
+    def test_decode_empty_list(self, temp_vocab_file):
+        """Test decoding empty list."""
+        bpe = BPE(temp_vocab_file, min_pair_frequency=1)
+        text = "hello"
+        bpe.set_vocab_size(20)
+
+        bpe.create_vocab(text)
+
+        decoded = bpe.decode([])
+        assert decoded == ""
+
+    def test_decode_single_token(self, temp_vocab_file):
+        """Test decoding single token."""
+        bpe = BPE(temp_vocab_file, min_pair_frequency=1)
+        text = "hello hello"
+        bpe.set_vocab_size(50)
+
+        bpe.create_vocab(text)
+
+        # Get the ID for 'hello' token
+        if 'hello' in bpe.lookup:
+            hello_id = bpe.lookup['hello'].id
+            decoded = bpe.decode([hello_id])
+            assert decoded == "hello"
+
+    def test_decode_with_whitespace(self, temp_vocab_file):
+        """Test that decode preserves whitespace."""
+        bpe = BPE(temp_vocab_file, min_pair_frequency=1)
+        text = "hello world test"
+        bpe.set_vocab_size(50)
+
+        bpe.create_vocab(text)
+        encoded = bpe.encode(text)
+        decoded = bpe.decode(encoded)
+
+        assert decoded == text
+
+    def test_decode_roundtrip(self, temp_vocab_file):
+        """Test encode-decode roundtrip maintains original text."""
+        bpe = BPE(temp_vocab_file, min_pair_frequency=1)
+        original_text = "the quick brown fox jumps over the lazy dog"
+        bpe.set_vocab_size(100)
+
+        bpe.create_vocab(original_text)
+        encoded = bpe.encode(original_text)
+        decoded = bpe.decode(encoded)
+
+        assert decoded == original_text
+
+    def test_decode_invalid_token_id(self, temp_vocab_file):
+        """Test that decode raises error for invalid token ID."""
+        bpe = BPE(temp_vocab_file, min_pair_frequency=1)
+        text = "hello"
+        bpe.set_vocab_size(20)
+
+        bpe.create_vocab(text)
+
+        # Try to decode with non-existent token ID
+        invalid_id = 99999
+        try:
+            bpe.decode([invalid_id])
+            assert False, "Should have raised ValueError for invalid token ID"
+        except ValueError as e:
+            assert "not found in vocabulary" in str(e)
+
+    def test_decode_multiple_words(self, temp_vocab_file):
+        """Test decoding multiple words with merged tokens."""
+        bpe = BPE(temp_vocab_file, min_pair_frequency=1)
+        text = "hello hello world world"
+        bpe.set_vocab_size(50)
+
+        bpe.create_vocab(text)
+        encoded = bpe.encode(text)
+        decoded = bpe.decode(encoded)
+
+        assert decoded == text
+
+
 class TestBPEEarlyExit:
     """Test suite for early exit feature with min_pair_frequency."""
 
