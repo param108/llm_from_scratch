@@ -25,6 +25,23 @@ class BPE:
        
     def set_vocab_size(self, vocab_size):
         self.vocab_size = vocab_size
+
+    def get_model_vocab_size(self):
+        """
+        Get the vocabulary size to use when creating a model.
+
+        This returns the maximum token ID that can be generated + 1,
+        which is needed for PyTorch embedding layers that expect
+        token IDs in range [0, vocab_size).
+
+        Returns:
+            The vocabulary size for model creation (last_id)
+        """
+        if len(self.lookup) == 0:
+            return 0
+        # The vocab size for the model should be last_id because
+        # token IDs can range from 1 to last_id-1
+        return self.last_id
         
     def get_next_id(self):
         id = self.last_id

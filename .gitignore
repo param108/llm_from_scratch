@@ -135,6 +135,38 @@ test_vocab*.txt
 demo_*.txt
 *.vocab
 
+# PyTorch models and checkpoints
+*.pt
+*.pth
+*.ckpt
+*.model
+checkpoints/
+models/
+saved_models/
+gpt2_model.pt
+
+# Training artifacts
+runs/
+logs/
+tensorboard_logs/
+wandb/
+outputs/
+results/
+experiments/
+
+# Training data
+data/
+datasets/
+training_data/
+*.txt.gz
+*.txt.zip
+
+# Generated samples
+generated_*.txt
+samples/
+predictions/
+
 # Temporary files
 tmp/
 temp/
+*.tmp

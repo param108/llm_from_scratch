@@ -1,5 +1,5 @@
 # Production dependencies
-# (none currently - pure Python implementation)
+torch>=2.0.0
 
 # Development dependencies
 pytest>=9.0.0
