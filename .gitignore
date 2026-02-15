@@ -170,3 +170,6 @@ predictions/
 tmp/
 temp/
 *.tmp
+
+# Project-specific files to ignore
+bg.txt
