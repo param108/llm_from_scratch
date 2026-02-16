@@ -45,7 +45,7 @@ python -m venv env
 source env/bin/activate  # On Windows: env\Scripts\activate
 
 # Install dependencies
-pip install torch pytest
+pip install -r requirements.txt
 ```
 
 ## 🎯 Quick Start
@@ -53,7 +53,10 @@ pip install torch pytest
 ### 1. Train a Model
 
 ```bash
-# Train from scratch (creates vocabulary automatically)
+# generate vocab -> creates vocab.txt which is used in the next steps (takes a while)
+python main.py tokenize training_data.txt
+
+# Train from scratch will pick up vocab.txt as the vocabulary.
 python main.py train training_data.txt
 
 # Train with custom vocabulary
