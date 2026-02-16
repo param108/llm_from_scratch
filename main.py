@@ -253,19 +253,53 @@ def main():
         vocab_size = bpe.get_model_vocab_size()
         print(f"Vocabulary: {len(bpe.lookup)} tokens (vocab_size={vocab_size})")
 
-        # Load model
+        # Load model - auto-detect configuration from checkpoint
         print(f"Loading model from {model_file}...")
-        model = GPT2(
-            vocab_size=vocab_size,
-            embedding_dim=768,
-            num_layers=12,
-            num_heads=12,
-            max_seq_len=1024
-        )
 
         try:
-            model.load(model_file)
+            # Load checkpoint to detect model configuration
+            checkpoint = torch.load(model_file)
+
+            if 'token_embedding.embedding.weight' in checkpoint:
+                # Detect configuration from checkpoint
+                checkpoint_vocab_size = checkpoint['token_embedding.embedding.weight'].shape[0]
+                embedding_dim = checkpoint['token_embedding.embedding.weight'].shape[1]
+
+                if checkpoint_vocab_size != vocab_size:
+                    print(f"\nWARNING: Vocabulary size mismatch!", file=sys.stderr)
+                    print(f"  Checkpoint vocab size: {checkpoint_vocab_size}", file=sys.stderr)
+                    print(f"  Current vocab size: {vocab_size}", file=sys.stderr)
+                    print(f"\nPlease use the correct vocabulary file.", file=sys.stderr)
+                    sys.exit(1)
+
+                # Detect max_seq_len from position embeddings
+                if 'position_embedding.weight' in checkpoint:
+                    max_seq_len = checkpoint['position_embedding.weight'].shape[0]
+                else:
+                    max_seq_len = 1024  # Default fallback
+
+                print(f"Detected model configuration:")
+                print(f"  Vocab size: {checkpoint_vocab_size}")
+                print(f"  Embedding dim: {embedding_dim}")
+                print(f"  Max sequence length: {max_seq_len}")
+            else:
+                print("Warning: Could not detect model configuration, using defaults")
+                embedding_dim = 768
+                max_seq_len = 1024
+
+            # Create model with detected configuration
+            model = GPT2(
+                vocab_size=vocab_size,
+                embedding_dim=embedding_dim,
+                num_layers=12,
+                num_heads=12,
+                max_seq_len=max_seq_len
+            )
+
+            # Load state dict
+            model.load_state_dict(checkpoint)
             print("Model loaded successfully!")
+
         except Exception as e:
             print(f"Error loading model: {e}", file=sys.stderr)
             sys.exit(1)
