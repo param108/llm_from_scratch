@@ -2,7 +2,7 @@
 
 import pytest
 from pathlib import Path
-from bpe import BPE
+from embeddings import BPE
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ class TestBPEEncoding:
         assert decoded == test_input, f"Decoded '{decoded}' doesn't match input '{test_input}'"
         assert len(result) < len(test_input), "Encoding should compress the input"
         assert len(result) == 2, f"Expected 2 tokens, got {len(result)}"
-        assert len(bpe_instance.lookup) == 10, "Should have exactly 10 tokens in vocabulary"
+        assert len(bpe_instance.lookup) == 11, "Should have 10 tokens + <EOT> in vocabulary"
 
     def test_repeated_patterns(self, bpe_instance):
         """Test encoding of text with repeated patterns."""
@@ -108,8 +108,8 @@ class TestBPEVocabulary:
         bpe_instance.set_vocab_size(vocab_size)
         bpe_instance.create_vocab(test_input)
 
-        assert len(bpe_instance.lookup) == vocab_size, \
-            f"Vocabulary size should be {vocab_size}, got {len(bpe_instance.lookup)}"
+        assert len(bpe_instance.lookup) == vocab_size + 1, \
+            f"Vocabulary size should be {vocab_size} + 1 (EOT), got {len(bpe_instance.lookup)}"
 
     def test_merged_tokens_in_vocabulary(self, bpe_instance):
         """Test that merged tokens are properly added to vocabulary."""

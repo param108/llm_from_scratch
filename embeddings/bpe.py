@@ -14,15 +14,16 @@ class BPE:
         self.vocab_size = 1000
         self.min_pair_frequency = min_pair_frequency
         self.whitespace_tokens = set()  # Track which tokens are whitespace
+        self.eot_token_id = None  # Special End-of-Text token ID
 
     def get_recommended_vocab_size(self, input):
         words = input.split()
         # find unique words
         unique_words = set(words)
-        # A common heuristic is to have a vocabulary size 
+        # A common heuristic is to have a vocabulary size
         # that is about 2 times the number of unique words in the input
         return len(unique_words) * 2
-       
+
     def set_vocab_size(self, vocab_size):
         self.vocab_size = vocab_size
 
@@ -42,7 +43,15 @@ class BPE:
         # The vocab size for the model should be last_id because
         # token IDs can range from 1 to last_id-1
         return self.last_id
-        
+
+    def get_eot_token_id(self):
+        """Get the End-of-Text token ID.
+
+        Returns:
+            The EOT token ID, or None if not set
+        """
+        return self.eot_token_id
+
     def get_next_id(self):
         id = self.last_id
         self.last_id += 1
@@ -60,7 +69,7 @@ class BPE:
         # Replace all other whitespace (tabs, multiple spaces, etc.) with single space
         input = re.sub(r'[ \t]+', ' ', input)
         return input
-    
+
     def base_vocab(self, input):
         # Normalize whitespace first
         input = self.normalize_whitespace(input)
@@ -89,7 +98,7 @@ class BPE:
             print(f"Total vocabulary size: {len(self.lookup)}")
         print("input length:", len(encoded_input))
         return encoded_input
-    
+
     def bpe_merge(self, input):
         """Simple BPE merge - count pairs, find most common, merge."""
         if len(input) < 2:
@@ -133,7 +142,7 @@ class BPE:
                 i += 1
 
         return new_input, True
-    
+
     def create_vocab(self, input):
         """Create vocabulary from input text using BPE algorithm."""
         # Try to load existing vocabulary first (only if we don't have one already)
@@ -161,10 +170,23 @@ class BPE:
             if not should_continue or len(self.lookup) == prev_vocab_size or len(encoded_input) < 2:
                 break
 
+        # Add special <EOT> token with the max vocab ID
+        self._add_eot_token()
+
         # Save final vocabulary
         print(f"Saving final vocabulary (size: {len(self.lookup)})...")
         self.save()
         return encoded_input
+
+    def _add_eot_token(self):
+        """Add the special <EOT> (End-of-Text) token with max vocab ID."""
+        eot_str = "<EOT>"
+        if eot_str not in self.lookup:
+            # Use the current last_id as the EOT token ID
+            self.eot_token_id = self.get_next_id()
+            self.lookup[eot_str] = Token(eot_str, self.eot_token_id)
+            self.reverse_lookup[self.eot_token_id] = eot_str
+            print(f"Added special <EOT> token with ID: {self.eot_token_id}")
 
     def encode(self, input):
         """Encode input text using existing vocabulary with longest-match algorithm.
@@ -178,10 +200,21 @@ class BPE:
         i = 0
 
         while i < len(input):
+            # Check for <EOT> token first
+            if input[i:i+5] == "<EOT>":
+                if "<EOT>" in self.lookup:
+                    result.append(self.lookup["<EOT>"].id)
+                    i += 5
+                    continue
+                else:
+                    raise ValueError("<EOT> token found in text but not in vocabulary. Please create vocabulary first.")
+
             # If current character is whitespace, add it directly
             if input[i].isspace():
                 if input[i] in self.lookup:
                     result.append(self.lookup[input[i]].id)
+                else:
+                    raise ValueError(f"Whitespace character {repr(input[i])} not found in vocabulary. Please create vocabulary first.")
                 i += 1
                 continue
 
@@ -256,7 +289,7 @@ class BPE:
         with open(self.filename, 'w') as f:
             for token, token_obj in self.lookup.items():
                 f.write(f"{token}\t{token_obj.id}\n")
-    
+
     def load(self):
         """Load vocabulary from file if it exists."""
         import os
@@ -279,6 +312,9 @@ class BPE:
                 # Reconstruct whitespace_tokens set
                 if len(token) == 1 and token[0].isspace():
                     self.whitespace_tokens.add(token_id)
+                # Check for <EOT> token
+                if token == "<EOT>":
+                    self.eot_token_id = token_id
                 max_id = max(max_id, token_id)
 
             # Update last_id to continue from where we left off

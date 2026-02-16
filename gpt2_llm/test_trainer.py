@@ -11,7 +11,7 @@ import tempfile
 # Add parent directory to path to import BPE
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from bpe import BPE
+from embeddings import BPE
 from gpt2_llm.gpt2 import GPT2
 from gpt2_llm.trainer import Trainer, TextDataset
 

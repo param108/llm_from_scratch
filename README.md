@@ -303,7 +303,7 @@ Trainer(
 #### Training
 ```python
 from gpt2_llm import GPT2, Trainer
-from bpe import BPE
+from embeddings import BPE
 
 # Load or create vocabulary
 bpe = BPE("vocab.txt")
@@ -338,7 +338,7 @@ trainer.train(
 ```python
 import torch
 from gpt2_llm import GPT2
-from bpe import BPE
+from embeddings import BPE
 
 # Load vocabulary and model
 bpe = BPE("vocab.txt")

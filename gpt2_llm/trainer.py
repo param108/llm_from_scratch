@@ -10,7 +10,7 @@ import os
 
 # Add parent directory to path to import BPE
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from bpe import BPE
+from embeddings import BPE
 from .gpt2 import GPT2
 
 
@@ -21,20 +21,58 @@ class TextDataset(Dataset):
     Creates sequences of tokens for next-token prediction.
     Each sequence has max_seq_len tokens, and the target is to predict
     the next token at each position.
+
+    If eot_token_id is provided, sequences will not span across <EOT> boundaries.
     """
 
-    def __init__(self, token_ids, max_seq_len=1024):
+    def __init__(self, token_ids, max_seq_len=1024, eot_token_id=None):
         """
         Args:
             token_ids: List of token IDs
             max_seq_len: Maximum sequence length (context window)
+            eot_token_id: Optional End-of-Text token ID. If provided,
+                         sequences will not cross <EOT> boundaries.
         """
         self.token_ids = token_ids
         self.max_seq_len = max_seq_len
+        self.eot_token_id = eot_token_id
 
-        # Calculate number of sequences we can create
-        # We need max_seq_len + 1 tokens (input + target)
-        self.num_sequences = max(0, len(token_ids) - max_seq_len)
+        # Build list of valid sequence starting positions
+        self.valid_starts = self._build_valid_starts()
+        self.num_sequences = len(self.valid_starts)
+
+    def _build_valid_starts(self):
+        """Build list of valid starting positions for sequences.
+
+        If eot_token_id is set, excludes positions that would cause
+        sequences to span across <EOT> boundaries.
+        """
+        valid_starts = []
+
+        if self.eot_token_id is None:
+            # No EOT handling - all positions are valid
+            for i in range(max(0, len(self.token_ids) - self.max_seq_len)):
+                valid_starts.append(i)
+        else:
+            # With EOT handling - skip sequences that cross EOT boundaries
+            i = 0
+            while i < len(self.token_ids) - self.max_seq_len:
+                # Check if there's an EOT token in the next max_seq_len + 1 positions
+                end_idx = i + self.max_seq_len + 1
+                sequence = self.token_ids[i:end_idx]
+
+                # Check if EOT appears in this sequence
+                if self.eot_token_id in sequence:
+                    # Find position of EOT
+                    eot_pos = sequence.index(self.eot_token_id)
+                    # Skip to position after EOT
+                    i = i + eot_pos + 1
+                else:
+                    # No EOT in this sequence, it's valid
+                    valid_starts.append(i)
+                    i += 1
+
+        return valid_starts
 
     def __len__(self):
         return self.num_sequences
@@ -45,8 +83,8 @@ class TextDataset(Dataset):
             input_ids: Tensor of shape (max_seq_len,)
             target_ids: Tensor of shape (max_seq_len,)
         """
-        # Get sequence starting at idx
-        start_idx = idx
+        # Get sequence starting at the valid start position
+        start_idx = self.valid_starts[idx]
         end_idx = start_idx + self.max_seq_len + 1
 
         sequence = self.token_ids[start_idx:end_idx]
@@ -155,8 +193,11 @@ class Trainer:
         if min_token_id < 0:
             raise ValueError(f"Invalid negative token ID {min_token_id} found in encoded data.")
 
-        # Create dataset
-        dataset = TextDataset(token_ids, max_seq_len=self.max_seq_len)
+        # Create dataset with EOT token handling
+        eot_token_id = self.bpe.get_eot_token_id()
+        dataset = TextDataset(token_ids, max_seq_len=self.max_seq_len, eot_token_id=eot_token_id)
+        if eot_token_id is not None:
+            print(f"Using <EOT> token (ID: {eot_token_id}) for sequence boundaries")
         print(f"Number of training sequences: {len(dataset)}")
 
         # Create dataloader

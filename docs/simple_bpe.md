@@ -122,7 +122,7 @@ def encode(self, input):
 ### Basic Usage
 
 ```python
-from bpe import BPE
+from embeddings import BPE
 
 # Create BPE instance with default threshold
 bpe = BPE("vocab.txt")

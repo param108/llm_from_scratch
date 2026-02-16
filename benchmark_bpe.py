@@ -2,7 +2,7 @@
 
 import time
 import tempfile
-from bpe import BPE
+from embeddings import BPE
 
 
 def benchmark_encoding(text, vocab_size, description):

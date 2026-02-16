@@ -1,7 +1,7 @@
 import sys
 import json
 import torch
-from bpe import BPE
+from embeddings import BPE
 from gpt2_llm.trainer import Trainer
 from gpt2_llm.gpt2 import GPT2
 

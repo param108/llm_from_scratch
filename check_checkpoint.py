@@ -3,7 +3,7 @@ Diagnostic script to inspect model checkpoints and vocabulary files.
 """
 import sys
 import torch
-from bpe import BPE
+from embeddings import BPE
 
 def check_checkpoint(checkpoint_path, vocab_path):
     """Check checkpoint and vocabulary compatibility."""
