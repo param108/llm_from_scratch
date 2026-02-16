@@ -181,8 +181,13 @@ class BPE:
     def _add_eot_token(self):
         """Add the special <EOT> (End-of-Text) token with max vocab ID."""
         eot_str = "<EOT>"
-        if eot_str not in self.lookup:
-            # Use the current last_id as the EOT token ID
+        if eot_str in self.lookup:
+            # EOT already exists in vocabulary (from training data)
+            # Just mark it as the special EOT token
+            self.eot_token_id = self.lookup[eot_str].id
+            print(f"Marked existing <EOT> token (ID: {self.eot_token_id}) as special EOT token")
+        else:
+            # EOT doesn't exist, create it as a new token
             self.eot_token_id = self.get_next_id()
             self.lookup[eot_str] = Token(eot_str, self.eot_token_id)
             self.reverse_lookup[self.eot_token_id] = eot_str
