@@ -335,18 +335,9 @@ def main():
         generated_ids = generated[0].tolist()
         generated_text = bpe.decode(generated_ids)
 
-        # Get individual tokens for display
-        token_strings = [bpe.reverse_lookup.get(tid, f"<UNK:{tid}>") for tid in generated_ids]
-        tokens_with_spaces = " ".join(token_strings)
-
         print("Generated text:")
         print("-" * 60)
         print(generated_text)
-        print("-" * 60)
-
-        print("\nTokens (with spaces):")
-        print("-" * 60)
-        print(tokens_with_spaces)
         print("-" * 60)
 
         # Also show token-by-token

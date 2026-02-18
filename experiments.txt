@@ -1,0 +1,2 @@
+1. Have space as a unique token and don't allow merge with space. Learning is worse I felt.
+2. Allow only merging with the space after.
